@@ -7,6 +7,7 @@ import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.CommonContext;
 import com.atlassian.bamboo.v2.build.agent.messages.AuthenticableMessage;
+import com.atlassian.spring.container.ContainerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.security.provider.SharedCredentialsDataProvider;
 
@@ -28,6 +29,7 @@ public class TokenDataProvider extends SharedCredentialsDataProvider implements 
     @NotNull
     @Override
     public Map<String, String> populateRuntimeTaskData(@NotNull TaskDefinition taskDefinition, @NotNull CommonContext commonContext) {
+        secureTokenService = (SecureTokenService) ContainerManager.getComponent("secureTokenService");
         final Map<String, String> result = super.populateRuntimeTaskData(taskDefinition, commonContext);
         result.put(SECURITY_TOKEN, secureTokenService.generate(AuthenticableMessage.Identification.forResultKey(commonContext.getResultKey())).getToken());
 

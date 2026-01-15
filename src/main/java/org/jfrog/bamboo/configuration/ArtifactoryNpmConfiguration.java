@@ -5,8 +5,8 @@ import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityDefaultsHelper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ public class ArtifactoryNpmConfiguration extends AbstractArtifactoryConfiguratio
     private static final String CFG_NPM_COMMAND_PUBLISH = "publish";
     private static final String KEY = "artifactoryNpmBuilder";
     private static final Set<String> FIELDS_TO_COPY = NpmBuildContext.getFieldsToCopy();
-    private static final Map<String, String> CFG_NPM_COMMAND_OPTIONS = ImmutableMap.of(CFG_NPM_COMMAND_INSTALL, "install", CFG_NPM_COMMAND_PUBLISH, "pack and publish");
+    private static final Map<String, String> CFG_NPM_COMMAND_OPTIONS = Map.of(CFG_NPM_COMMAND_INSTALL, "install", CFG_NPM_COMMAND_PUBLISH, "pack and publish");
 
     public ArtifactoryNpmConfiguration() {
         super(NpmBuildContext.PREFIX, CapabilityDefaultsHelper.CAPABILITY_BUILDER_PREFIX + ".npm");

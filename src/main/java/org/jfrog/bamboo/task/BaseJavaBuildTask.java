@@ -11,6 +11,7 @@ import com.atlassian.bamboo.v2.build.agent.capability.Capability;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
 import com.atlassian.bamboo.v2.build.agent.capability.ReadOnlyCapabilitySet;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import com.atlassian.utils.process.*;
 import com.google.common.collect.Maps;
@@ -42,10 +43,14 @@ public abstract class BaseJavaBuildTask extends ArtifactoryTaskType {
     public static final String JAVA_HOME = "JAVA_HOME";
 
     protected Map<String, String> environmentVariables;
+    @ComponentImport
     protected final EnvironmentVariableAccessor environmentVariableAccessor;
+    @ComponentImport
     private final TestCollationService testCollationService;
     protected BuildParamsOverrideManager buildParamsOverrideManager;
+    @ComponentImport
     protected CustomVariableContext customVariableContext;
+    @ComponentImport
     private final ProcessService processService;
     String buildInfoPropertiesFile;
     boolean activateBuildInfoRecording;
@@ -55,8 +60,8 @@ public abstract class BaseJavaBuildTask extends ArtifactoryTaskType {
     protected BaseJavaBuildTask(TestCollationService testCollationService,
                                 EnvironmentVariableAccessor environmentVariableAccessor, ProcessService processService) {
         ContainerManager.autowireComponent(this);
-        this.testCollationService = testCollationService;
         this.processService = processService;
+        this.testCollationService = testCollationService;
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.buildParamsOverrideManager = new BuildParamsOverrideManager(customVariableContext);
         this.bambooTmp = getBambooTmp(customVariableContext);

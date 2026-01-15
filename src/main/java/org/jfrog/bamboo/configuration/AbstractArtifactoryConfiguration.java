@@ -8,9 +8,11 @@ import com.atlassian.bamboo.repository.NameValuePair;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.agent.capability.Requirement;
 import com.atlassian.bamboo.ww2.actions.build.admin.create.UIConfigSupport;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.message.I18nResolver;
 import com.atlassian.spring.container.ContainerManager;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +29,7 @@ import org.jfrog.bamboo.release.vcs.VcsTypes;
 import org.jfrog.bamboo.release.vcs.git.GitAuthenticationType;
 import org.jfrog.bamboo.security.EncryptionHelper;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,15 +49,15 @@ import static org.jfrog.bamboo.context.PackageManagersContext.PUBLISH_BUILD_INFO
 public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfigurator implements
         TaskTestResultsSupport, BuildTaskRequirementSupport {
 
+    @ComponentImport
     protected I18nResolver i18nResolver;
     public static final String CFG_TEST_RESULTS_FILE_PATTERN_OPTION_CUSTOM = "customTestDirectory";
     public static final String CFG_TEST_RESULTS_FILE_PATTERN_OPTION_STANDARD = "standardTestDirectory";
-    private static final Map<String, String> TEST_RESULTS_FILE_PATTERN_TYPES = ImmutableMap
-            .of(CFG_TEST_RESULTS_FILE_PATTERN_OPTION_STANDARD, "Look in the standard test results directory.",
+    private static final Map<String, String> TEST_RESULTS_FILE_PATTERN_TYPES = Map.of(CFG_TEST_RESULTS_FILE_PATTERN_OPTION_STANDARD, "Look in the standard test results directory.",
                     CFG_TEST_RESULTS_FILE_PATTERN_OPTION_CUSTOM, "Specify custom results directories");
     public static final String CFG_LEGACY_PATTERNS = "legacyPatterns";
     public static final String CFG_FILE_SPECS = "specs";
-    public static final Map<String, String> USE_SPECS_OPTIONS = ImmutableMap.of(CFG_FILE_SPECS, "Specs", CFG_LEGACY_PATTERNS, "Legacy patterns (deprecated)");
+    public static final Map<String, String> USE_SPECS_OPTIONS = Map.of(CFG_FILE_SPECS, "Specs", CFG_LEGACY_PATTERNS, "Legacy patterns (deprecated)");
 
     // If selected, use the credentials configured in the global Artifactory servers configuration
     public static final String CVG_CRED_NO_OVERRIDE = "noOverriding";
@@ -63,13 +66,15 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
     // If selected, use the shared credentials chosen in the job configuration
     public static final String CVG_CRED_SHARED_CREDENTIALS = "sharedCredentials";
     // Map between credential overriding options to description
-    public static final Map<String, String> CFG_OVERRIDE_CREDENTIALS_OPTIONS = ImmutableMap.of(CVG_CRED_NO_OVERRIDE, "No overriding", CVG_CRED_USERNAME_PASSWORD, "Provide username and password", CVG_CRED_SHARED_CREDENTIALS, "Use shared credentials");
+    public static final Map<String, String> CFG_OVERRIDE_CREDENTIALS_OPTIONS = Map.of(CVG_CRED_NO_OVERRIDE, "No overriding", CVG_CRED_USERNAME_PASSWORD, "Provide username and password", CVG_CRED_SHARED_CREDENTIALS, "Use shared credentials");
     public static final String CFG_SPEC_SOURCE_FILE = "file";
     public static final String CFG_SPEC_SOURCE_JOB_CONFIGURATION = "jobConfiguration";
-    public static final Map<String, String> CFG_SPEC_SOURCE = ImmutableMap.of(CFG_SPEC_SOURCE_JOB_CONFIGURATION, "Task configuration", CFG_SPEC_SOURCE_FILE, "File");
-    public static final Map<String, String> SIGN_METHOD_MAP = ImmutableMap.of("false", "Don't Sign", "true", "Sign");
+    public static final Map<String, String> CFG_SPEC_SOURCE = Map.of(CFG_SPEC_SOURCE_JOB_CONFIGURATION, "Task configuration", CFG_SPEC_SOURCE_FILE, "File");
+    public static final Map<String, String> SIGN_METHOD_MAP = Map.of("false", "Don't Sign", "true", "Sign");
     public static final String SIGN_METHOD_MAP_KEY = "signMethods";
-    protected transient ServerConfigManager serverConfigManager;
+    @Inject
+    protected ServerConfigManager serverConfigManager;
+
     protected transient CredentialsAccessor credentialsAccessor;
     protected AdministrationConfiguration administrationConfiguration;
     protected UIConfigSupport uiConfigSupport;
@@ -83,7 +88,7 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
     }
 
     protected AbstractArtifactoryConfiguration(String builderContextPrefix, @Nullable String capabilityPrefix) {
-        serverConfigManager = ServerConfigManager.getInstance();
+
         if (administrationConfiguration == null) {
             administrationConfiguration =
                     (AdministrationConfiguration) ContainerManager.getComponent("administrationConfiguration");
@@ -105,7 +110,6 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
     @Override
     public void populateContextForEdit(@NotNull Map<String, Object> context, @NotNull TaskDefinition taskDefinition) {
         super.populateContextForEdit(context, taskDefinition);
-        serverConfigManager = ServerConfigManager.getInstance();
         populateContextForAllOperations(context);
     }
 
@@ -126,7 +130,6 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
     @Override
     public void populateContextForCreate(@NotNull Map<String, Object> context) {
         super.populateContextForCreate(context);
-        serverConfigManager = ServerConfigManager.getInstance();
         populateContextForAllOperations(context);
     }
 
@@ -189,7 +192,13 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
 
     // populate common objects into context
     private void populateContextForAllOperations(@NotNull Map<String, Object> context) {
-        context.put("uiConfigBean", uiConfigSupport);
+        uiConfigSupport = (UIConfigSupport) ContainerManager.getComponent("uiConfigSupport");
+
+        // 2. Put it in the context so the FTL can see "uiConfigBean.jdkLabels"
+        if (uiConfigSupport != null) {
+            context.put("uiConfigBean", uiConfigSupport);
+
+        }
         context.put("testDirectoryTypes", TEST_RESULTS_FILE_PATTERN_TYPES);
         context.put(PackageManagersContext.ENV_VARS_EXCLUDE_PATTERNS, PackageManagersContext.ENV_VARS_TO_EXCLUDE);
         context.put(ArtifactoryBuildContext.BUILD_NAME, ArtifactoryBuildContext.DEFAULT_BUILD_NAME);
@@ -200,7 +209,11 @@ public abstract class AbstractArtifactoryConfiguration extends AbstractTaskConfi
         context.put(GenericContext.USE_SPECS_CHOICE, CFG_FILE_SPECS);
         context.put("specSourceOptions", CFG_SPEC_SOURCE);
         context.put(GenericContext.SPEC_SOURCE_CHOICE, CFG_SPEC_SOURCE_JOB_CONFIGURATION);
-        context.put("credentialsAccessor", credentialsAccessor);
+        credentialsAccessor = (CredentialsAccessor) ContainerManager.getComponent("credentialsAccessor");
+        if (credentialsAccessor != null) {
+            context.put("credentialsAccessor", credentialsAccessor);
+        }
+
     }
 
     /**

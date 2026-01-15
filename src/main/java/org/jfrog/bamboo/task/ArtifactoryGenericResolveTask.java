@@ -5,10 +5,13 @@ import com.atlassian.bamboo.process.EnvironmentVariableAccessor;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import com.google.common.collect.Lists;
+import jnr.ffi.annotations.In;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuildInfoHelper;
 import org.jfrog.bamboo.configuration.BuildParamsOverrideManager;
 import org.jfrog.bamboo.context.GenericContext;
@@ -22,6 +25,7 @@ import org.jfrog.build.extractor.ci.Dependency;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
 import org.jfrog.build.extractor.clientConfiguration.util.spec.SpecsHelper;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +38,17 @@ public class ArtifactoryGenericResolveTask extends ArtifactoryTaskType {
     private final EnvironmentVariableAccessor environmentVariableAccessor;
     private final BuildParamsOverrideManager buildParamsOverrideManager;
     private CustomVariableContext customVariableContext;
+
     private BuildInfoHelper buildInfoHelper;
     private GenericContext genericContext;
     private String fileSpec;
+    private final ServerConfigManager serverConfigManager;
 
-    public ArtifactoryGenericResolveTask(EnvironmentVariableAccessor environmentVariableAccessor) {
+    @Inject
+    public ArtifactoryGenericResolveTask(@ComponentImport  EnvironmentVariableAccessor environmentVariableAccessor, @ComponentImport  CustomVariableContext customVariableContext, ServerConfigManager serverConfigManager) {
         this.environmentVariableAccessor = environmentVariableAccessor;
+        this.customVariableContext = customVariableContext;
+        this.serverConfigManager = serverConfigManager;
         ContainerManager.autowireComponent(this);
         this.buildParamsOverrideManager = new BuildParamsOverrideManager(customVariableContext);
     }
@@ -54,7 +63,7 @@ public class ArtifactoryGenericResolveTask extends ArtifactoryTaskType {
                 genericContext.getBuildNumber(buildContext), context, buildContext, environmentVariableAccessor,
                 genericContext.getSelectedServerId(),
                 genericContext.getOverriddenUsername(runtimeContext, buildInfoLog, false),
-                genericContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager);
+                genericContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager,serverConfigManager);
     }
 
     @NotNull

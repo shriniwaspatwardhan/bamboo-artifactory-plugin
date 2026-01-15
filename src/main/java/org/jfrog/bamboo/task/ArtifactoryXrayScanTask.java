@@ -12,7 +12,9 @@ import org.jfrog.bamboo.util.TaskUtils;
 import org.jfrog.build.client.artifactoryXrayResponse.ArtifactoryXrayResponse;
 import org.jfrog.build.client.artifactoryXrayResponse.Summary;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
 
@@ -22,6 +24,8 @@ import java.util.Map;
 public class ArtifactoryXrayScanTask extends ArtifactoryTaskType {
     private CustomVariableContext customVariableContext;
     private ServerConfig xrayServerConfig;
+    @Inject
+    private ServerConfigManager serverConfigManager;
     private XrayScanContext xrayContext;
 
     @Override
@@ -93,7 +97,6 @@ public class ArtifactoryXrayScanTask extends ArtifactoryTaskType {
     }
 
     private void setXrayServerConfigurations(XrayScanContext xrayContext) {
-        ServerConfigManager serverConfigManager = ServerConfigManager.getInstance();
         xrayServerConfig = serverConfigManager.getServerConfigById(xrayContext.getArtifactoryServerId());
         if (xrayServerConfig == null) {
             throw new IllegalArgumentException("Could not find Artifactory server. Please check the Artifactory server in the task configuration.");

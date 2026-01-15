@@ -7,6 +7,7 @@ import com.atlassian.bamboo.process.EnvironmentVariableAccessor;
 import com.atlassian.bamboo.process.ProcessService;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import com.atlassian.utils.process.ExternalProcess;
 import com.google.common.collect.Lists;
@@ -16,6 +17,7 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.tools.ant.types.Commandline;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuilderDependencyHelper;
 import org.jfrog.bamboo.builder.GradleDataHelper;
 import org.jfrog.bamboo.context.GradleBuildContext;
@@ -27,6 +29,7 @@ import org.jfrog.bamboo.util.Utils;
 import org.jfrog.build.extractor.ci.BuildInfoFields;
 import org.jfrog.gradle.plugin.artifactory.task.ArtifactoryTask;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,16 +55,20 @@ public class ArtifactoryGradleTask extends BaseJavaBuildTask {
     private static final String GRADLE_KEY = "system.builder.gradle.";
     private AdministrationConfiguration administrationConfiguration;
     private final BuilderDependencyHelper dependencyHelper;
+    @ComponentImport
     private final CapabilityContext capabilityContext;
     private GradleBuildContext gradleBuildContext;
     private GradleDataHelper gradleDataHelper;
     private String artifactoryPluginVersion;
     private String gradleDependenciesDir;
+    private final ServerConfigManager serverConfigManager;
 
+    @Inject
     public ArtifactoryGradleTask(final ProcessService processService,
                                  final EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext,
-                                 TestCollationService testCollationService) {
+                                 TestCollationService testCollationService, ServerConfigManager serverConfigManager) {
         super(testCollationService, environmentVariableAccessor, processService);
+        this.serverConfigManager = serverConfigManager;
         this.capabilityContext = capabilityContext;
         dependencyHelper = new BuilderDependencyHelper("artifactoryGradleBuilder");
         ContainerManager.autowireComponent(dependencyHelper);
@@ -75,7 +82,7 @@ public class ArtifactoryGradleTask extends BaseJavaBuildTask {
         initEnvironmentVariables(gradleBuildContext);
         aggregateBuildInfo = gradleBuildContext.shouldAggregateBuildInfo(context);
         gradleDataHelper = new GradleDataHelper(buildParamsOverrideManager, context, gradleBuildContext,
-                administrationConfiguration, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo);
+                administrationConfiguration, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo,serverConfigManager);
     }
 
     @Override

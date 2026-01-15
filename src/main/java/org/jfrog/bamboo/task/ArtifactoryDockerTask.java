@@ -4,9 +4,11 @@ import com.atlassian.bamboo.process.EnvironmentVariableAccessor;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuildInfoHelper;
 import org.jfrog.bamboo.configuration.BuildParamsOverrideManager;
 import org.jfrog.bamboo.context.DockerBuildContext;
@@ -16,6 +18,7 @@ import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.docker.extractor.DockerPull;
 import org.jfrog.build.extractor.docker.extractor.DockerPush;
 
+import javax.inject.Inject;
 import java.util.Map;
 
 /**
@@ -27,14 +30,18 @@ public class ArtifactoryDockerTask extends ArtifactoryTaskType {
     private CustomVariableContext customVariableContext;
     private Map<String, String> environmentVariables;
     private DockerBuildContext dockerBuildContext;
+
     private BuildInfoHelper buildInfoHelper;
     private String buildNumber;
     private String buildName;
     private ArtifactoryManagerBuilder artifactoryManagerBuilder;
+    private final ServerConfigManager serverConfigManager;
 
-    public ArtifactoryDockerTask(EnvironmentVariableAccessor environmentVariableAccessor) {
+    @Inject
+    public ArtifactoryDockerTask(@ComponentImport  EnvironmentVariableAccessor environmentVariableAccessor, @ComponentImport CustomVariableContext customVariableContext, ServerConfigManager serverConfigManager) {
         this.environmentVariableAccessor = environmentVariableAccessor;
-        ContainerManager.autowireComponent(this);
+        this.customVariableContext = customVariableContext;
+        this.serverConfigManager = serverConfigManager;
     }
 
     @Override
@@ -89,8 +96,9 @@ public class ArtifactoryDockerTask extends ArtifactoryTaskType {
         String repo = buildInfoHelper.overrideParam(dockerBuildContext.getPublishingRepo(), BuildParamsOverrideManager.OVERRIDE_ARTIFACTORY_DEPLOY_REPO);
         String userName = buildInfoHelper.getServerConfig().getUsername();
         String password = buildInfoHelper.getServerConfig().getPassword();
+        org.jfrog.build.api.multiMap.Multimap commonArtifactPropertiesMap = new org.jfrog.build.api.multiMap.ListMultimap<>(TaskUtils.getCommonArtifactPropertiesMap(buildInfoHelper).asMap());
         return new DockerPush(artifactoryManagerBuilder, dockerBuildContext.getImageName(),
-                dockerBuildContext.getHost(), TaskUtils.getCommonArtifactPropertiesMap(buildInfoHelper), repo,
+                dockerBuildContext.getHost(), commonArtifactPropertiesMap, repo,
                 userName, password, buildInfoLog, environmentVariables).execute();
     }
 
@@ -100,12 +108,12 @@ public class ArtifactoryDockerTask extends ArtifactoryTaskType {
             buildInfoHelper = BuildInfoHelper.createResolveBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, dockerBuildContext.getResolutionArtifactoryServerId(),
                     dockerBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, false),
-                    dockerBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager);
+                    dockerBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager,serverConfigManager);
         } else {
             buildInfoHelper = BuildInfoHelper.createDeployBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, dockerBuildContext.getArtifactoryServerId(),
                     dockerBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, true),
-                    dockerBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager);
+                    dockerBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager,serverConfigManager);
         }
     }
 

@@ -18,6 +18,7 @@ import org.jfrog.bamboo.util.TaskUtils;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
 import org.jfrog.build.extractor.clientConfiguration.util.spec.SpecsHelper;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Map;
 
@@ -29,6 +30,8 @@ import java.util.Map;
 public class ArtifactoryDeploymentDownloadTask extends ArtifactoryDeploymentTaskType {
     private CustomVariableContext customVariableContext;
     private ServerConfig downloadServerConfig;
+    @Inject
+    private ServerConfigManager serverConfigManager;
     private GenericContext genericContext;
     private String fileSpec;
 
@@ -54,7 +57,6 @@ public class ArtifactoryDeploymentDownloadTask extends ArtifactoryDeploymentTask
     }
 
     private ServerConfig getArtifactoryServerConfig(BuildParamsOverrideManager buildParamsOverrideManager) {
-        ServerConfigManager serverConfigManager = ServerConfigManager.getInstance();
         ServerConfig selectedServerConfig = serverConfigManager.getServerConfigById(genericContext.getSelectedServerId());
         if (selectedServerConfig == null) {
             throw new IllegalArgumentException("Could not find Artifactory server. Please check the Artifactory server in the task configuration.");

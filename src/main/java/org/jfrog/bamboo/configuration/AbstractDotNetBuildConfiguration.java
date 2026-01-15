@@ -4,8 +4,8 @@ import com.atlassian.bamboo.collections.ActionParametersMap;
 import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +25,7 @@ public abstract class AbstractDotNetBuildConfiguration extends AbstractArtifacto
     private static final Set<String> FIELDS_TO_COPY = DotNetBuildContext.getFieldsToCopy();
     public static final String CFG_COMMAND_RESTORE = "restore";
     private static final String CFG_COMMAND_PUSH = "push";
-    private static final Map<String, String> CFG_COMMAND_OPTIONS = ImmutableMap.of(CFG_COMMAND_RESTORE, "restore",
+    private static final Map<String, String> CFG_COMMAND_OPTIONS = Map.of(CFG_COMMAND_RESTORE, "restore",
             CFG_COMMAND_PUSH, "push");
 
     public AbstractDotNetBuildConfiguration(String capability) {

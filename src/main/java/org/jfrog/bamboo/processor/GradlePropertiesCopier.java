@@ -10,6 +10,7 @@ import com.atlassian.bamboo.security.SecureToken;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.task.AbstractBuildTask;
+import com.atlassian.spring.container.ContainerManager;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +46,12 @@ public class GradlePropertiesCopier extends AbstractBuildTask implements CustomB
     @NotNull
     public BuildContext call() {
         PlanResultKey planResultKey = buildContext.getPlanResultKey();
+        if (this.buildLoggerManager == null) {
+            this.buildLoggerManager = (BuildLoggerManager) ContainerManager.getComponent("buildLoggerManager");
+        }
+        if(this.artifactManager == null){
+            this.artifactManager = (ArtifactManager) ContainerManager.getComponent("artifactManager");
+        }
         BuildLogger buildLogger = buildLoggerManager.getLogger(planResultKey);
         File checkoutDir = VcsHelper.getCheckoutDirectory(buildContext);
         if (checkoutDir == null) {

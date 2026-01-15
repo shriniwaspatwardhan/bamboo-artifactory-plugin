@@ -20,6 +20,7 @@ import org.jfrog.bamboo.util.deployment.LegacyDeploymentUtils;
 import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.clientConfiguration.util.spec.SpecsHelper;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,6 +37,9 @@ public class ArtifactoryDeploymentUploadTask extends ArtifactoryDeploymentTaskTy
     private ServerConfig uploadServerConfig;
     private String fileSpec;
 
+    @Inject
+    private ServerConfigManager serverConfigManager;
+
     @Override
     protected void initTask(@NotNull CommonTaskContext context) throws TaskException {
         super.initTask(context);
@@ -45,7 +49,7 @@ public class ArtifactoryDeploymentUploadTask extends ArtifactoryDeploymentTaskTy
         uploadServerConfig = TaskUtils.getResolutionServerConfig(
                 deploymentUploadContext.getOverriddenUsername(runtimeContext, buildInfoLog, true),
                 deploymentUploadContext.getOverriddenPassword(runtimeContext, buildInfoLog, true),
-                ServerConfigManager.getInstance(), selectedServerConfig, new BuildParamsOverrideManager(customVariableContext));
+                serverConfigManager, selectedServerConfig, new BuildParamsOverrideManager(customVariableContext));
     }
 
     @NotNull
@@ -95,7 +99,7 @@ public class ArtifactoryDeploymentUploadTask extends ArtifactoryDeploymentTaskTy
      * Get configurations of the selected server in the task definition.
      */
     private ServerConfig getSelectedServerConfig(@NotNull CommonTaskContext deploymentTaskContext) {
-        ServerConfigManager serverConfigManager = ServerConfigManager.getInstance();
+
         String serverId = deploymentTaskContext.getConfigurationMap().get(ArtifactoryDeploymentUploadConfiguration.DEPLOYMENT_PREFIX + PackageManagersContext.SERVER_ID_PARAM);
         if (StringUtils.isBlank(serverId)) {
             // Compatibility with version 1.8.0

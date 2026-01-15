@@ -138,7 +138,7 @@ public class DeleteTagCommand extends GitCommand<Object> {
         }
         if (signed) {
             throw new UnsupportedOperationException(
-                    JGitText.get().signingNotSupportedOnTag);
+                    JGitText.get().signingServiceUnavailable);
         }
     }
 

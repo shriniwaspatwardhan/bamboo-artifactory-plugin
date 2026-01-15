@@ -9,6 +9,7 @@ import com.atlassian.spring.container.ContainerManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuildInfoHelper;
 import org.jfrog.bamboo.configuration.BuildParamsOverrideManager;
 import org.jfrog.bamboo.context.NpmBuildContext;
@@ -20,6 +21,7 @@ import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.npm.extractor.NpmInstallCi;
 import org.jfrog.build.extractor.npm.extractor.NpmPublish;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Map;
@@ -35,14 +37,18 @@ public class ArtifactoryNpmTask extends ArtifactoryTaskType {
     private CustomVariableContext customVariableContext;
     private Map<String, String> environmentVariables;
     private NpmBuildContext npmBuildContext;
-    private BuildInfoHelper buildInfoHelper;
+
     private String buildNumber;
     private String buildName;
     private Path packagePath;
+    private BuildInfoHelper buildInfoHelper;
+    private final ServerConfigManager serverConfigManager;
 
-    public ArtifactoryNpmTask(EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext) {
+    @Inject
+    public ArtifactoryNpmTask(EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext, ServerConfigManager serverConfigManager) {
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.capabilityContext = capabilityContext;
+        this.serverConfigManager = serverConfigManager;
         ContainerManager.autowireComponent(this);
     }
 
@@ -98,12 +104,12 @@ public class ArtifactoryNpmTask extends ArtifactoryTaskType {
             buildInfoHelper = BuildInfoHelper.createResolveBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, npmBuildContext.getResolutionArtifactoryServerId(),
                     npmBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, false),
-                    npmBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager);
+                    npmBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager,serverConfigManager);
         } else {
             buildInfoHelper = BuildInfoHelper.createDeployBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, npmBuildContext.getArtifactoryServerId(),
                     npmBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, true),
-                    npmBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager);
+                    npmBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager,serverConfigManager);
         }
     }
 
@@ -127,7 +133,10 @@ public class ArtifactoryNpmTask extends ArtifactoryTaskType {
      */
     private BuildInfo executeNpmPublish() {
         String repo = buildInfoHelper.overrideParam(npmBuildContext.getPublishingRepo(), BuildParamsOverrideManager.OVERRIDE_ARTIFACTORY_DEPLOY_REPO);
-        return new NpmPublish(buildInfoHelper.getClientBuilder(logger, log), TaskUtils.getCommonArtifactPropertiesMap(buildInfoHelper), packagePath, repo, buildInfoLog, environmentVariables, "").execute();
+
+        org.jfrog.build.api.multiMap.Multimap commonArtifactPropertiesMap = new org.jfrog.build.api.multiMap.ListMultimap<>(TaskUtils.getCommonArtifactPropertiesMap(buildInfoHelper).asMap());
+
+        return new NpmPublish(buildInfoHelper.getClientBuilder(logger, log), commonArtifactPropertiesMap, packagePath, repo, buildInfoLog, environmentVariables, "").execute();
     }
 
     /**

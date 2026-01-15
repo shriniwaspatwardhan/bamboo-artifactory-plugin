@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tomer Cohen
@@ -75,12 +76,8 @@ public class IvyBuildContext extends PackageManagersContext {
     }
 
     public static IvyBuildContext createIvyContextFromMap(Map<String, Object> map) {
-        Map<String, String> transformed = Maps.transformValues(map, new Function<Object, String>() {
-            @Override
-            public String apply(Object input) {
-                return input.toString();
-            }
-        });
+        Map<String, String> transformed = map.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() == null ? "" : e.getValue().toString()));
         return new IvyBuildContext(transformed);
     }
 

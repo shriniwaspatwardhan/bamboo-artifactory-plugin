@@ -7,14 +7,15 @@ import com.atlassian.bamboo.process.EnvironmentVariableAccessor;
 import com.atlassian.bamboo.process.ProcessService;
 import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import com.atlassian.utils.process.ExternalProcess;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.tools.ant.types.Commandline;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuilderDependencyHelper;
 import org.jfrog.bamboo.builder.MavenDataHelper;
 import org.jfrog.bamboo.context.Maven3BuildContext;
@@ -22,6 +23,7 @@ import org.jfrog.bamboo.util.PluginProperties;
 import org.jfrog.bamboo.util.TaskUtils;
 import org.jfrog.bamboo.util.Utils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,20 +46,25 @@ import static org.jfrog.bamboo.util.TaskUtils.getPlanKey;
 public class ArtifactoryMaven3Task extends BaseJavaBuildTask {
     public static final String TASK_NAME = "maven3Task";
 
+    private ServerConfigManager serverConfigManager;
+    @ComponentImport
     private final EnvironmentVariableAccessor environmentVariableAccessor;
     private final BuilderDependencyHelper dependencyHelper;
+    @ComponentImport
     private final CapabilityContext capabilityContext;
     private Maven3BuildContext mavenBuildContext;
     private MavenDataHelper mavenDataHelper;
     private String artifactoryPluginVersion;
 
+    @Inject
     public ArtifactoryMaven3Task(final ProcessService processService,
                                  final EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext,
-                                 TestCollationService testCollationService) {
+                                 TestCollationService testCollationService, ServerConfigManager serverConfigManager) {
         super(testCollationService, environmentVariableAccessor, processService);
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.capabilityContext = capabilityContext;
         this.dependencyHelper = new BuilderDependencyHelper("artifactoryMaven3Builder");
+        this.serverConfigManager = serverConfigManager;
         ContainerManager.autowireComponent(dependencyHelper);
     }
 
@@ -69,7 +76,7 @@ public class ArtifactoryMaven3Task extends BaseJavaBuildTask {
         initEnvironmentVariables(mavenBuildContext);
         aggregateBuildInfo = mavenBuildContext.shouldAggregateBuildInfo(taskContext);
         mavenDataHelper = new MavenDataHelper(buildParamsOverrideManager, (TaskContext) taskContext,
-                mavenBuildContext, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo);
+                mavenBuildContext, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo,serverConfigManager);
     }
 
     @Override
@@ -216,7 +223,7 @@ public class ArtifactoryMaven3Task extends BaseJavaBuildTask {
     }
 
     private List<String> getCommand(String jdkPath) {
-        List<String> command = Lists.newArrayList();
+        List<String> command = new ArrayList<>();
         String executable = getJavaExecutable(jdkPath);
         if (StringUtils.isBlank(executable)) {
             log.error("No Maven executable found");

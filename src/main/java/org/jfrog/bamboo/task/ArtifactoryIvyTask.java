@@ -16,6 +16,7 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.tools.ant.types.Commandline;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuilderDependencyHelper;
 import org.jfrog.bamboo.builder.IvyDataHelper;
 import org.jfrog.bamboo.builder.MavenAndIvyBuildInfoDataHelperBase;
@@ -24,6 +25,7 @@ import org.jfrog.bamboo.util.PluginProperties;
 import org.jfrog.bamboo.util.TaskUtils;
 import org.jfrog.bamboo.util.Utils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,15 +49,18 @@ public class ArtifactoryIvyTask extends BaseJavaBuildTask {
     private IvyBuildContext ivyBuildContext;
     private MavenAndIvyBuildInfoDataHelperBase ivyDataHelper;
     private String artifactoryPluginVersion;
+    private final ServerConfigManager serverConfigManager;
 
+    @Inject
     public ArtifactoryIvyTask(final ProcessService processService,
                               final EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext,
-                              TestCollationService testCollationService) {
+                              TestCollationService testCollationService, ServerConfigManager serverConfigManager) {
         super(testCollationService, environmentVariableAccessor, processService);
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.capabilityContext = capabilityContext;
         dependencyHelper = new BuilderDependencyHelper("artifactoryIvyBuilder");
         ContainerManager.autowireComponent(dependencyHelper);
+        this.serverConfigManager = serverConfigManager;
     }
 
     @Override
@@ -68,7 +73,7 @@ public class ArtifactoryIvyTask extends BaseJavaBuildTask {
         initEnvironmentVariables(ivyBuildContext);
         aggregateBuildInfo = ivyBuildContext.shouldAggregateBuildInfo(context, ivyBuildContext.getArtifactoryServerId());
         artifactoryPluginVersion = Utils.getPluginVersion(pluginAccessor);
-        ivyDataHelper = new IvyDataHelper(buildParamsOverrideManager, context, ivyBuildContext, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo);
+        ivyDataHelper = new IvyDataHelper(buildParamsOverrideManager, context, ivyBuildContext, environmentVariableAccessor, artifactoryPluginVersion, aggregateBuildInfo,serverConfigManager);
     }
 
     @Override

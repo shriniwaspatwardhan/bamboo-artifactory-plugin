@@ -7,6 +7,7 @@ import com.atlassian.bamboo.task.RuntimeTaskDataProvider;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.CommonContext;
+import com.atlassian.spring.container.ContainerManager;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +41,7 @@ public class SharedCredentialsDataProvider implements RuntimeTaskDataProvider {
     }
 
     private void populateSharedCredentials(TaskDefinition taskDefinition, Map<String, String> result, String type, String credUser, String credPassword) {
+        credentialsAccessor = (CredentialsAccessor) ContainerManager.getComponent("credentialsAccessor");
         String credentialsName = taskDefinition.getConfiguration().get(type);
         if (StringUtils.isBlank(credentialsName)) {
             return;

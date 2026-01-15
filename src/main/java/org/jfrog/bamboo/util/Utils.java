@@ -5,6 +5,10 @@ import com.atlassian.bamboo.task.runtime.RuntimeTaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.plugin.Plugin;
 import com.atlassian.plugin.PluginAccessor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang.StringUtils;
 import org.jfrog.bamboo.release.provider.TokenDataProvider;
@@ -68,4 +72,11 @@ public class Utils {
         }
         return "";
     }
+
+    public static ObjectMapper createMapper() {
+        return new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
+
 }

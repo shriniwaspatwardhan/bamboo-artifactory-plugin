@@ -6,6 +6,7 @@ import com.atlassian.bamboo.task.*;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.v2.build.CurrentBuildResult;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -14,6 +15,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuildInfoHelper;
 import org.jfrog.bamboo.configuration.BuildParamsOverrideManager;
 import org.jfrog.bamboo.context.GenericContext;
@@ -29,6 +31,7 @@ import org.jfrog.build.extractor.clientConfiguration.deploy.DeployDetails;
 import org.jfrog.build.extractor.clientConfiguration.util.PublishedItemsHelper;
 import org.jfrog.build.extractor.clientConfiguration.util.spec.SpecsHelper;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -48,13 +51,18 @@ public class ArtifactoryGenericDeployTask extends ArtifactoryTaskType {
     private final EnvironmentVariableAccessor environmentVariableAccessor;
     private final BuildParamsOverrideManager buildParamsOverrideManager;
     private CustomVariableContext customVariableContext;
+
     private BuildInfoHelper buildInfoHelper;
     private GenericContext genericContext;
     private BuildContext buildContext;
     private String fileSpec;
+    private final ServerConfigManager serverConfigManager;
 
-    public ArtifactoryGenericDeployTask(EnvironmentVariableAccessor environmentVariableAccessor) {
+    @Inject
+    public ArtifactoryGenericDeployTask(@ComponentImport EnvironmentVariableAccessor environmentVariableAccessor, @ComponentImport  CustomVariableContext customVariableContext, ServerConfigManager  serverConfigManager) {
         this.environmentVariableAccessor = environmentVariableAccessor;
+        this.customVariableContext = customVariableContext;
+        this.serverConfigManager = serverConfigManager;
         ContainerManager.autowireComponent(this);
         this.buildParamsOverrideManager = new BuildParamsOverrideManager(customVariableContext);
     }
@@ -70,7 +78,7 @@ public class ArtifactoryGenericDeployTask extends ArtifactoryTaskType {
                 genericContext.getSelectedServerId(),
                 genericContext.getOverriddenUsername(runtimeContext, buildInfoLog, true),
                 genericContext.getOverriddenPassword(runtimeContext, buildInfoLog, true),
-                buildParamsOverrideManager);
+                buildParamsOverrideManager,serverConfigManager);
     }
 
     @Override
@@ -158,22 +166,22 @@ public class ArtifactoryGenericDeployTask extends ArtifactoryTaskType {
         return taskContext.getWorkingDirectory();
     }
 
-    private Multimap<String, File> buildTargetPathToFiles(File directory, GenericContext context)
+    private org.jfrog.build.api.multiMap.Multimap<String, File> buildTargetPathToFiles(File directory, GenericContext context)
             throws IOException {
-        Multimap<String, File> result = HashMultimap.create();
+        org.jfrog.build.api.multiMap.Multimap<String, File> result = new org.jfrog.build.api.multiMap.SetMultimap();
         String deployPattern = context.getDeployPattern();
         deployPattern = StringUtils.replace(deployPattern, "\r\n", "\n");
         deployPattern = StringUtils.replace(deployPattern, ",", "\n");
 
         // Collect all published items pair in the form of 'pattern -> targetPath'
-        Multimap<String, String> pairs = PublishedItemsHelper.getPublishedItemsPatternPairs(deployPattern);
+        org.jfrog.build.api.multiMap.Multimap<String, String> pairs = PublishedItemsHelper.getPublishedItemsPatternPairs(deployPattern);
         if (pairs.isEmpty()) {
             return result;
         }
 
         // Collect all found items and put them into the result in the form of 'targetPath -> File'
         for (Map.Entry<String, String> entry : pairs.entries()) {
-            Multimap<String, File> filesMap = PublishedItemsHelper.buildPublishingData(directory, entry.getKey(),
+            org.jfrog.build.api.multiMap.Multimap<String, File> filesMap = PublishedItemsHelper.buildPublishingData(directory, entry.getKey(),
                     entry.getValue());
             if (filesMap != null) {
                 log.info(logger.addBuildLogEntry(
@@ -188,7 +196,7 @@ public class ArtifactoryGenericDeployTask extends ArtifactoryTaskType {
     }
 
     private BuildInfo deployByLegacyPattern(File sourceCodeDirectory, BuildInfo build, ArtifactoryManagerBuilder artifactoryManagerBuilder, GenericContext context) throws IOException, NoSuchAlgorithmException {
-        Multimap<String, File> filesMap = buildTargetPathToFiles(sourceCodeDirectory, context);
+        org.jfrog.build.api.multiMap.Multimap<String, File> filesMap = buildTargetPathToFiles(sourceCodeDirectory, context);
         Set<DeployDetails> details = Sets.newHashSet();
         Map<String, String> dynamicPropertyMap = buildInfoHelper.getDynamicPropertyMap(build);
         String repoKey = buildInfoHelper.overrideParam(context.getRepoKey(), BuildParamsOverrideManager.OVERRIDE_ARTIFACTORY_DEPLOY_REPO);

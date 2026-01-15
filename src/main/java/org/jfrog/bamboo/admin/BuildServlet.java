@@ -27,7 +27,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jfrog.bamboo.util.ConstantValues;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,11 +43,10 @@ public class BuildServlet extends HttpServlet {
 
     private static final Logger log = LogManager.getLogger(BuildServlet.class);
     private PlanManager planManager;
-    private final UserManager userManager;
 
-    public BuildServlet(UserManager userManager) {
+    public BuildServlet() {
         planManager = (PlanManager) ContainerManager.getComponent("planManager");
-        this.userManager = userManager;
+
     }
 
     /**
@@ -57,11 +55,7 @@ public class BuildServlet extends HttpServlet {
      */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UserProfile profile = userManager.getRemoteUser(req);
-        if (profile == null || profile.getUserKey() == null) {
-            resp.sendError(HttpStatus.SC_NOT_FOUND);
-            return;
-        }
+
         String buildKeyValue = req.getParameter(ConstantValues.BUILD_SERVLET_KEY_PARAM);
         if (StringUtils.isBlank(buildKeyValue)) {
             resp.sendError(HttpStatus.SC_BAD_REQUEST, "Please provide a build key.");

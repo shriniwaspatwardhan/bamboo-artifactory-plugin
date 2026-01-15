@@ -16,8 +16,6 @@
 
 package org.jfrog.bamboo.admin;
 
-import com.atlassian.sal.api.user.UserManager;
-import com.atlassian.sal.api.user.UserProfile;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +24,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,10 +43,9 @@ public class ArtifactoryConfigServlet extends HttpServlet {
 
     private static final Logger log = LogManager.getLogger(ArtifactoryConfigServlet.class);
     private ServerConfigManager serverConfigManager;
-    private final UserManager userManager;
 
-    public ArtifactoryConfigServlet(ServerConfigManager serverConfigManager, UserManager userManager) {
-        this.userManager = userManager;
+    @Inject
+    public ArtifactoryConfigServlet(ServerConfigManager serverConfigManager) {
         this.serverConfigManager = serverConfigManager;
     }
 
@@ -58,11 +56,6 @@ public class ArtifactoryConfigServlet extends HttpServlet {
      */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        UserProfile profile = userManager.getRemoteUser(req);
-        if (profile == null || profile.getUserKey() == null) {
-            resp.sendError(HttpStatus.SC_NOT_FOUND);
-            return;
-        }
 
         String serverIdValue = req.getParameter("serverId");
         if (StringUtils.isBlank(serverIdValue)) {

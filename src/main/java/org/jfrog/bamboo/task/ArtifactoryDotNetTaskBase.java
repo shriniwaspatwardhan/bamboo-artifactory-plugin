@@ -10,6 +10,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jfrog.bamboo.admin.ServerConfig;
+import org.jfrog.bamboo.admin.ServerConfigManager;
 import org.jfrog.bamboo.builder.BuildInfoHelper;
 import org.jfrog.bamboo.configuration.BuildParamsOverrideManager;
 import org.jfrog.bamboo.context.DotNetBuildContext;
@@ -21,6 +22,7 @@ import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.clientConfiguration.util.spec.SpecsHelper;
 import org.jfrog.build.extractor.nuget.extractor.NugetRun;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -36,6 +38,7 @@ public abstract class ArtifactoryDotNetTaskBase extends ArtifactoryTaskType {
     protected final CapabilityContext capabilityContext;
     protected CustomVariableContext customVariableContext;
     protected DotNetBuildContext dotNetBuildContext;
+    protected ServerConfigManager serverConfigManager;
     protected BuildInfoHelper buildInfoHelper;
     protected BuildParamsOverrideManager buildParamsOverrideManager;
     protected Map<String, String> environmentVariables;
@@ -96,9 +99,10 @@ public abstract class ArtifactoryDotNetTaskBase extends ArtifactoryTaskType {
         return TaskResultBuilder.newBuilder(taskContext).success().build();
     }
 
-    protected ArtifactoryDotNetTaskBase(EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext) {
+    protected ArtifactoryDotNetTaskBase(EnvironmentVariableAccessor environmentVariableAccessor, final CapabilityContext capabilityContext, ServerConfigManager serverConfigManager) {
         this.environmentVariableAccessor = environmentVariableAccessor;
         this.capabilityContext = capabilityContext;
+        this.serverConfigManager = serverConfigManager;
         ContainerManager.autowireComponent(this);
     }
 
@@ -164,12 +168,12 @@ public abstract class ArtifactoryDotNetTaskBase extends ArtifactoryTaskType {
             buildInfoHelper = BuildInfoHelper.createResolveBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, dotNetBuildContext.getResolutionArtifactoryServerId(),
                     dotNetBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, false),
-                    dotNetBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager);
+                    dotNetBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, false), buildParamsOverrideManager,serverConfigManager);
         } else {
             buildInfoHelper = BuildInfoHelper.createDeployBuildInfoHelper(buildName, buildNumber, taskContext, buildContext,
                     environmentVariableAccessor, dotNetBuildContext.getArtifactoryServerId(),
                     dotNetBuildContext.getOverriddenUsername(runtimeContext, buildInfoLog, true),
-                    dotNetBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager);
+                    dotNetBuildContext.getOverriddenPassword(runtimeContext, buildInfoLog, true), buildParamsOverrideManager,serverConfigManager);
         }
     }
 

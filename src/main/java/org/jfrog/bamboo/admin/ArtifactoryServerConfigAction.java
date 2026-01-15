@@ -16,7 +16,9 @@
 
 package org.jfrog.bamboo.admin;
 
+import com.atlassian.bamboo.plugin.RemoteAgentSupported;
 import com.atlassian.bamboo.ww2.BambooActionSupport;
+
 import com.atlassian.bamboo.ww2.aware.permissions.GlobalAdminSecurityAware;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +30,7 @@ import org.jfrog.bamboo.util.TaskUtils;
 import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -52,11 +55,12 @@ public class ArtifactoryServerConfigAction extends BambooActionSupport implement
 
     private transient ServerConfigManager serverConfigManager;
 
+    @Inject
     public ArtifactoryServerConfigAction(ServerConfigManager serverConfigManager) {
         this.serverConfigManager = serverConfigManager;
         mode = "add";
         timeout = 300;
-        }
+    }
 
     @Override
     public void validate() {
@@ -229,6 +233,7 @@ public class ArtifactoryServerConfigAction extends BambooActionSupport implement
      * @param serverConfig - Server being updated.
      */
     private void updateFieldsFromServerConfig(ServerConfig serverConfig) {
+        log.info("edit serverConfig %s".formatted(serverConfig));
         setUrl(serverConfig.getUrl());
         setUsername(serverConfig.getUsername());
         setPassword(EncryptionHelper.encryptForUi(serverConfig.getPassword()));

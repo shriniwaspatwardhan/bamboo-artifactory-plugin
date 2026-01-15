@@ -5,8 +5,8 @@ import com.atlassian.bamboo.plan.Plan;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.v2.build.agent.capability.CapabilityDefaultsHelper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +28,7 @@ public class ArtifactoryDockerConfiguration extends AbstractArtifactoryConfigura
     private static final String CFG_DOCKER_COMMAND_PUSH = "push";
     private static final String KEY = "artifactoryDockerBuilder";
     private static final Set<String> FIELDS_TO_COPY = DockerBuildContext.getFieldsToCopy();
-    private static final Map<String, String> CFG_DOCKER_COMMAND_OPTIONS = ImmutableMap.of(CFG_DOCKER_COMMAND_PULL, "pull", CFG_DOCKER_COMMAND_PUSH, "push");
+    private static final Map<String, String> CFG_DOCKER_COMMAND_OPTIONS = Map.of(CFG_DOCKER_COMMAND_PULL, "pull", CFG_DOCKER_COMMAND_PUSH, "push");
 
     public ArtifactoryDockerConfiguration() {
         super(DockerBuildContext.PREFIX, CapabilityDefaultsHelper.CAPABILITY_BUILDER_PREFIX + ".docker");

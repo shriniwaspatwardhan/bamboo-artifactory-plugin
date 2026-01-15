@@ -2,7 +2,6 @@ package org.jfrog.bamboo.release.vcs.git;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.v2.build.BuildContext;
-import com.atlassian.struts.TextProvider;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -19,6 +18,8 @@ import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.RefUpdate;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.*;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 import org.jetbrains.annotations.Nullable;
 import org.jfrog.bamboo.context.PackageManagersContext;
@@ -40,7 +41,6 @@ public class GitManager extends AbstractVcsManager {
     private static final String REF_PREFIX = "refs/heads/";
     private static final String REFS_TAGS = "refs/tags/";
     private BuildLogger buildLogger;
-    private TextProvider textProvider;
     private String username = "";
     private String password = "";
     private String url = "";
@@ -104,7 +104,7 @@ public class GitManager extends AbstractVcsManager {
             ObjectId objId = localRepository.resolve(Constants.HEAD);
             return (objId != null ? objId.getName() : null);
         } catch (IOException e) {
-            String message = textProvider.getText("repository.git.messages.cannotDetermineRevision", Arrays
+            String message = String.format("repository.git.messages.cannotDetermineRevision", Arrays
                     .asList(workingDir)) + " " + e.getMessage();
             log.warn(message, e);
             buildLogger.addErrorLogEntry(message, e);
@@ -123,7 +123,7 @@ public class GitManager extends AbstractVcsManager {
             localRepository = new FileRepository(workingDir);
             return localRepository.getBranch();
         } catch (IOException e) {
-            String message = textProvider.getText("repository.git.messages.cannotDetermineRevision", Arrays
+            String message = String.format("repository.git.messages.cannotDetermineRevision", Arrays
                     .asList(workingDir)) + " " + e.getMessage();
             log.warn(message, e);
             buildLogger.addErrorLogEntry(message, e);
@@ -139,14 +139,11 @@ public class GitManager extends AbstractVcsManager {
         this.buildLogger = buildLogger;
     }
 
-    public void setTextProvider(TextProvider textProvider) {
-        this.textProvider = textProvider;
-    }
 
     public void checkoutBranch(final String branch, final boolean create) throws IOException {
         log("Checking out branch: " + branch);
         try (Git git = createGitApi()) {
-            git.checkout().setCreateBranch(create).setForce(create).setName(branch).call();
+            git.checkout().setCreateBranch(create).setForced(create).setName(branch).call();
         } catch (Exception e) {
             String message = "An error '" + e.getMessage() + "' occurred while checking out branch: " + branch;
             log.error(message, e);

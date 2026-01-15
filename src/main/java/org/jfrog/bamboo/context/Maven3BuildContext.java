@@ -3,9 +3,12 @@ package org.jfrog.bamboo.context;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.commons.collections.MapUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Tomer Cohen
@@ -87,15 +90,8 @@ public class Maven3BuildContext extends PackageManagersContext {
     }
 
     public static Maven3BuildContext createMavenContextFromMap(Map<String, Object> map) {
-        Map<String, String> transformed = Maps.transformValues(map, new Function<Object, String>() {
-            @Override
-            public String apply(Object input) {
-                if (input == null) {
-                    return "";
-                }
-                return input.toString();
-            }
-        });
+        Map<String, String> transformed = map.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue() == null ? "" : e.getValue().toString()));
         return new Maven3BuildContext(transformed);
     }
 

@@ -7,6 +7,7 @@ import com.atlassian.bamboo.credentials.CredentialsAccessor;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
+import com.atlassian.spring.container.ContainerManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +37,9 @@ public class ArtifactoryPreBuildAction extends AbstractBuildAction implements Cu
     @Override
     @NotNull
     public BuildContext call() throws Exception {
+        if (this.buildLoggerManager == null) {
+            this.buildLoggerManager = (BuildLoggerManager) ContainerManager.getComponent("buildLoggerManager");
+        }
         BuildLogger logger = buildLoggerManager.getLogger(buildContext.getPlanResultKey());
         setBuildLogger(logger);
         List<TaskDefinition> taskDefinitions = buildContext.getBuildDefinition().getTaskDefinitions();

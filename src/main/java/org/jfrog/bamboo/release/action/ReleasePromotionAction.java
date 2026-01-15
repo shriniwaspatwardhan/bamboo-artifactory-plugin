@@ -16,12 +16,12 @@ import com.atlassian.bamboo.v2.build.agent.capability.CapabilityContext;
 import com.atlassian.bamboo.v2.build.trigger.ManualBuildTriggerReason;
 import com.atlassian.bamboo.v2.build.trigger.TriggerReason;
 import com.atlassian.bamboo.variable.VariableDefinitionManager;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.user.User;
 import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.opensymphony.xwork2.ActionContext;
+import org.apache.struts2.ServletActionContext;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,11 +42,14 @@ import org.jfrog.build.api.release.Promotion;
 import org.jfrog.build.extractor.BuildInfoExtractorUtils;
 import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * An action to display when entering the "Artifactory Release & Promotion" tab from within a job.
@@ -65,12 +68,14 @@ public class ReleasePromotionAction extends ViewBuildResults {
     private static final Logger log = LogManager.getLogger(ReleasePromotionAction.class);
     private static final String PROMOTION_NORMAL_MODE = "normalMode";
     private static final Map<String, String> MODULE_VERSION_TYPES =
-            ImmutableMap.of(ReleaseProvider.CFG_ONE_VERSION, "One version for all modules.",
+            Map.of(ReleaseProvider.CFG_ONE_VERSION, "One version for all modules.",
                     ReleaseProvider.CFG_VERSION_PER_MODULE, "Version per module",
                     ReleaseProvider.CFG_USE_EXISTING_VERSION, "Use existing module versions");
     public static PromotionContext promotionContext = new PromotionContext();
-    ServerConfigManager serverConfigManager;
+
     private String promotionMode = PROMOTION_NORMAL_MODE;
+    @Inject
+    private ServerConfigManager serverConfigManager;
     private boolean promoting = true;
     private String promotionRepo = "";
     private VariableDefinitionManager variableDefinitionManager;
@@ -87,13 +92,11 @@ public class ReleasePromotionAction extends ViewBuildResults {
     private String releasePublishingRepo;
     private String stagingComment = "";
     private boolean useReleaseBranch = true;
+    @ComponentImport
     private CapabilityContext capabilityContext;
     private String releaseBranch;
     private List<ModuleVersionHolder> versions;
 
-    public ReleasePromotionAction() {
-        this.serverConfigManager = ServerConfigManager.getInstance();
-    }
 
     @Override
     public String execute() throws Exception {
@@ -229,7 +232,7 @@ public class ReleasePromotionAction extends ViewBuildResults {
         }
         setBuildKey(planKey.getKey());
         Map<String, String> configuration = Maps.newHashMap();
-        Map parameters = ActionContext.getContext().getParameters();
+        Map parameters = ServletActionContext.getContext().getParameters();
         configuration.put(PackageManagersContext.ACTIVATE_RELEASE_MANAGEMENT, String.valueOf(true));
         configuration.put(PackageManagersContext.ReleaseManagementContext.TAG_URL, getTagUrl());
         configuration.put(PackageManagersContext.ReleaseManagementContext.NEXT_DEVELOPMENT_COMMENT,
@@ -268,12 +271,10 @@ public class ReleasePromotionAction extends ViewBuildResults {
             return "";
         }
         Map<String, String> configuration = definition.getConfiguration();
-        Map<String, String> filtered = Maps.filterKeys(configuration, new Predicate<String>() {
-            @Override
-            public boolean apply(String input) {
-                return StringUtils.endsWith(input, PackageManagersContext.SERVER_ID_PARAM);
-            }
-        });
+        Map<String, String> filtered = configuration.entrySet().stream()
+                .filter(entry -> StringUtils.endsWith(entry.getKey(), PackageManagersContext.SERVER_ID_PARAM))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         return filtered.values().iterator().next();
     }
 
@@ -348,8 +349,7 @@ public class ReleasePromotionAction extends ViewBuildResults {
         if (StringUtils.isBlank(serverId)) {
             return Lists.newArrayList();
         }
-        ServerConfigManager component = ServerConfigManager.getInstance();
-        return component.getDeployableRepos(Long.parseLong(serverId));
+        return serverConfigManager.getDeployableRepos(Long.parseLong(serverId));
     }
 
     public String getReleasePublishingRepo() {
@@ -359,13 +359,13 @@ public class ReleasePromotionAction extends ViewBuildResults {
                 return "";
             }
             Map<String, String> configuration = definition.getConfiguration();
-            Map<String, String> filtered = Maps.filterKeys(configuration, new Predicate<String>() {
-                @Override
-                public boolean apply(String input) {
-                    return StringUtils.endsWith(input, PackageManagersContext.PUBLISHING_REPO_PARAM) ||
-                            StringUtils.endsWith(input, Maven3BuildContext.DEPLOYABLE_REPO_KEY);
-                }
-            });
+            Map<String, String> filtered = configuration.entrySet().stream()
+                    .filter(entry ->
+                            StringUtils.endsWith(entry.getKey(), PackageManagersContext.PUBLISHING_REPO_PARAM) ||
+                                    StringUtils.endsWith(entry.getKey(), Maven3BuildContext.DEPLOYABLE_REPO_KEY)
+                    )
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             return filtered.values().iterator().next();
         }
         return releasePublishingRepo;
@@ -501,7 +501,6 @@ public class ReleasePromotionAction extends ViewBuildResults {
             log.error("You are not permitted to execute build promotion.");
             return ERROR;
         }
-        ServerConfigManager component = ServerConfigManager.getInstance();
         TaskDefinition definition = getMavenOrGradleTaskDefinition(getImmutablePlan());
         if (definition == null) {
             return ERROR;
@@ -511,7 +510,7 @@ public class ReleasePromotionAction extends ViewBuildResults {
             log.error("No selected Artifactory server Id");
             return ERROR;
         }
-        ServerConfig serverConfig = component.getServerConfigById(Long.parseLong(serverId));
+        ServerConfig serverConfig = serverConfigManager.getServerConfigById(Long.parseLong(serverId));
         if (serverConfig == null) {
             log.error("Error while retrieving target repository list: Could not find Artifactory server " +
                     "configuration by the ID " + serverId);
@@ -586,8 +585,7 @@ public class ReleasePromotionAction extends ViewBuildResults {
             log.warn("No Artifactory server Id found");
             return Lists.newArrayList();
         }
-        ServerConfigManager component = ServerConfigManager.getInstance();
-        return component.getDeployableRepos(Long.parseLong(selectedServerId));
+        return serverConfigManager.getDeployableRepos(Long.parseLong(selectedServerId));
     }
 
     /**
@@ -617,15 +615,13 @@ public class ReleasePromotionAction extends ViewBuildResults {
         }
         ArtifactoryManagerBuilder clientBuilder;
         if (StringUtils.isBlank(username)) {
-            clientBuilder = TaskUtils.getArtifactoryManagerBuilderBuilder(new ServerConfig(serverConfig.getId(), serverUrl, "",
-                    "", serverConfig.getTimeout()), bambooLog);
+            clientBuilder = TaskUtils.getArtifactoryManagerBuilderBuilder(serverConfig, bambooLog);
         } else {
             String password = serverConfigManager.substituteVariables(context.getOverriddenPassword(taskConfiguration, bambooLog, true));
             if (StringUtils.isBlank(password)) {
                 password = serverConfigManager.substituteVariables(serverConfig.getPassword());
             }
-            clientBuilder = TaskUtils.getArtifactoryManagerBuilderBuilder(new ServerConfig(serverConfig.getId(), serverUrl, username, password,
-                    serverConfig.getTimeout()), bambooLog);
+            clientBuilder = TaskUtils.getArtifactoryManagerBuilderBuilder(serverConfig, bambooLog);
         }
         return clientBuilder;
     }
@@ -635,11 +631,10 @@ public class ReleasePromotionAction extends ViewBuildResults {
             return "";
         }
         Map<String, String> configuration = definition.getConfiguration();
-        Map<String, String> filtered = Maps.filterKeys(configuration, new Predicate<String>() {
-            public boolean apply(String input) {
-                return StringUtils.endsWith(input, PackageManagersContext.SERVER_ID_PARAM);
-            }
-        });
+        Map<String, String> filtered = configuration.entrySet().stream()
+                .filter(entry -> StringUtils.endsWith(entry.getKey(), PackageManagersContext.SERVER_ID_PARAM))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         return filtered.values().iterator().next();
     }
 

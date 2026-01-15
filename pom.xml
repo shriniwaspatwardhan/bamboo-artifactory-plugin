@@ -28,22 +28,23 @@
     </scm>
 
     <properties>
-        <bamboo.version>9.6.0</bamboo.version>
+        <bamboo.version>10.2.0</bamboo.version>
         <bamboo.data.version>${bamboo.version}</bamboo.data.version>
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
         <!-- This plugin key is to be used as a unique ID of the plugin incl.
         version and not as a key regarding the Atlassian plugin descriptor -->
         <plugin.key>${project.groupId}.${project.artifactId}-${project.version}</plugin.key>
+        <atlassian.spring.scanner.version>5.1.0</atlassian.spring.scanner.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <!--Skip integration tests unless explicitly requested with -DskipITs=false-->
         <skipITs>true</skipITs>
-        <buildinfo.version>2.41.14</buildinfo.version>
-        <buildinfo.gradle.version>4.33.13</buildinfo.gradle.version>
-        <amps.version>8.11.4</amps.version>
+        <buildinfo.version>2.41.22</buildinfo.version>
+        <buildinfo.gradle.version>6.0.4</buildinfo.gradle.version>
+        <amps.version>9.1.4</amps.version>
     </properties>
 
     <profiles>
@@ -99,7 +100,8 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Manage ehcache version to resolve conflict between atlassian-cache-ehcache (2.10.9.4.10) 
+
+		<!-- Manage ehcache version to resolve conflict between atlassian-cache-ehcache (2.10.9.4.10)
                  and hibernate-ehcache (2.10.6). Use 2.10.6 which is available in Maven Central. -->
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
@@ -110,113 +112,107 @@
     </dependencyManagement>
 
     <dependencies>
+	<dependency>
+        	<groupId>org.apache.struts</groupId>
+        	<artifactId>struts2-core</artifactId>
+        <version>6.3.0</version>
+        <scope>provided</scope>
+		<exclusions>
+	                <exclusion>
+                            <groupId>com.opensymphony</groupId>
+                            <artifactId>xwork2</artifactId>
+                        </exclusion>
+			<exclusion>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+			</exclusion>
+	                <exclusion>
+                                <groupId>commons-io</groupId>
+                                <artifactId>commons-io</artifactId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-reload4j</artifactId>
-            <version>1.7.36</version>
+            <groupId>com.atlassian.bamboo</groupId>
+            <artifactId>atlassian-bamboo-web</artifactId>
+            <version>${bamboo.version}</version>
+            <scope>provided</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.opensymphony.propertyset</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+
+                <exclusion>
+                    <groupId>opensymphony</groupId>
+                    <artifactId>propertyset</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.opensymphony.propertyset.providers</groupId>
+                    <artifactId>hibernate5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>build-info-extractor-docker</artifactId>
+            <version>${buildinfo.version}</version>
+            <classifier>uber</classifier>
+            <scope>provided</scope>
+            <exclusions>
+
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>jcl-over-slf4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.19.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-            <version>3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>1.16.0</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jgit</groupId>
-            <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.8.0.201706111038-r</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.jcraft</groupId>
-                    <artifactId>jsch</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
+                    <artifactId>slf4j-simple</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-api</artifactId>
-            <version>${buildinfo.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-client</artifactId>
-            <version>${buildinfo.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-vcs</artifactId>
-            <version>${buildinfo.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-extractor</artifactId>
-            <version>${buildinfo.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>guava</artifactId>
-                    <groupId>com.google.guava</groupId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.5.0-jre</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.jfrog.buildinfo</groupId>
             <artifactId>build-info-extractor-gradle</artifactId>
             <version>${buildinfo.gradle.version}</version>
             <classifier>uber</classifier>
+            <scope>compile</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.google.code.findbugs</groupId>
                     <artifactId>jsr305</artifactId>
@@ -232,7 +228,17 @@
             <artifactId>build-info-extractor-nuget</artifactId>
             <version>${buildinfo.version}</version>
             <classifier>uber</classifier>
+            <scope>provided</scope>
             <exclusions>
+
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
@@ -241,33 +247,38 @@
         </dependency>
         <dependency>
             <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-extractor-npm</artifactId>
+            <artifactId>build-info-vcs</artifactId>
             <version>${buildinfo.version}</version>
-            <classifier>uber</classifier>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.jfrog.buildinfo</groupId>
-            <artifactId>build-info-extractor-docker</artifactId>
-            <version>${buildinfo.version}</version>
-            <classifier>uber</classifier>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+            <scope>compile</scope>
             <exclusions>
+
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -275,8 +286,16 @@
             <groupId>org.jfrog.buildinfo</groupId>
             <artifactId>build-info-extractor-ivy</artifactId>
             <version>${buildinfo.version}</version>
-            <classifier>uber</classifier>
+            <scope>provided</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
@@ -287,12 +306,22 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.jfrog.buildinfo</groupId>
             <artifactId>build-info-extractor-maven3</artifactId>
             <version>${buildinfo.version}</version>
-            <classifier>uber</classifier>
+
+            <scope>provided</scope>
             <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.codehaus.groovy</groupId>
                     <artifactId>groovy-all</artifactId>
@@ -300,149 +329,214 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.14.1</version>
-        </dependency>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>build-info-extractor-npm</artifactId>
+            <version>${buildinfo.version}</version>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>2.14.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-web</artifactId>
-            <version>${bamboo.version}</version>
             <scope>provided</scope>
             <exclusions>
-                <!-- Exclude 'stax2-api' to prevent classloader issue, this dependency is provided by 'build-info-extractor-nuget' -->
                 <exclusion>
-                    <groupId>org.codehaus.woodstox</groupId>
-                    <artifactId>stax2-api</artifactId>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>build-info-extractor</artifactId>
+            <version>${buildinfo.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>build-info-api</artifactId>
+            <version>${buildinfo.version}</version>
+            <scope>compile</scope>
+            <exclusions>
+
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jfrog.buildinfo</groupId>
+            <artifactId>build-info-client</artifactId>
+            <version>${buildinfo.version}</version>
+            <scope>compile</scope>
+            <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>jcl-over-slf4j</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.2.220</version>
+            <groupId>org.jfrog.filespecs</groupId>
+            <artifactId>file-specs-java</artifactId>
+            <version>1.1.2</version>
         </dependency>
-
         <dependency>
-            <groupId>com.atlassian.labs</groupId>
-            <artifactId>rest-api-browser</artifactId>
-            <version>3.2.3</version>
+            <groupId>org.jfrog.artifactory.client</groupId>
+            <artifactId>artifactory-java-client-api</artifactId>
+            <version>2.17.0</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${atlassian.spring.scanner.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
+            <scope>provided</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.34</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- WIRED TEST RUNNER DEPENDENCIES -->
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
             <version>1.1.1</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-api</artifactId>
-            <version>${bamboo.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.17.2</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.tek42.perforce</groupId>
-                    <artifactId>p4java</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-
         <dependency>
-            <groupId>com.atlassian.bamboo</groupId>
-            <artifactId>atlassian-bamboo-core</artifactId>
-            <version>${bamboo.version}</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.2</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.tek42.perforce</groupId>
-                    <artifactId>p4java</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-core</artifactId>
-            <version>3.9.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-embedder</artifactId>
-            <version>3.8.7</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.17.2</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.jcraft</groupId>
-            <artifactId>jsch</artifactId>
-            <version>0.1.55</version>
-        </dependency>
-
-        <!-- WIRED TEST RUNNER DEPENDENCIES -->
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-osgi-testrunner</artifactId>
-            <version>2.0.1</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.11.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>7.5.0.202512021534-r</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.jcraft</groupId>
+                    <artifactId>jsch</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+            <version>7.5.0.202512021534-r</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.opensymphony.propertyset</groupId>
+            <artifactId>propertyset</artifactId>
+            <version>1.6.0-atlassian-8</version>
+            <type>pom</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.opensymphony.propertyset</groupId>
+                    <artifactId>api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.atlassian.plugins</groupId>
+            <artifactId>atlassian-plugins-osgi-testrunner</artifactId>
+            <version>2.0.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -460,32 +554,6 @@
                     <artifactId>jcl-over-slf4j</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-text</artifactId>
-            <version>1.10.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-osgi</artifactId>
-            <version>7.1.1</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.atlassian.plugin</groupId>
-            <artifactId>atlassian-spring-scanner-annotation</artifactId>
-            <version>1.2.13</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugin</groupId>
-            <artifactId>atlassian-spring-scanner-runtime</artifactId>
-            <version>1.2.13</version>
-            <scope>runtime</scope>
         </dependency>
 
     </dependencies>
@@ -514,6 +582,32 @@
         </resources>
         <plugins>
             <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+                <execution>
+                    <id>copy-extractor-jar</id>
+                    <phase>prepare-package</phase> <goals>
+                    <goal>copy</goal>
+                </goals>
+                    <configuration>
+                        <artifactItems>
+                            <artifactItem>
+                                <groupId>org.jfrog.buildinfo</groupId>
+                                <artifactId>build-info-extractor-maven3</artifactId>
+                                <version>2.41.22</version> <type>jar</type>
+                                <classifier>uber</classifier>
+                                <overWrite>true</overWrite>
+                                <destFileName>build-info-extractor-maven3-2.41.22-uber.jar</destFileName>
+                            </artifactItem>
+                        </artifactItems>
+                        <outputDirectory>${project.build.outputDirectory}/META-INF/lib</outputDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+            <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>bamboo-maven-plugin</artifactId>
                 <version>${amps.version}</version>
@@ -521,16 +615,28 @@
                 <configuration>
                     <productVersion>${bamboo.version}</productVersion>
                     <productDataVersion>${bamboo.data.version}</productDataVersion>
-                    <enableQuickReload>true</enableQuickReload>
                     <productDataPath>${basedir}/src/test/resources/bamboo-home.zip</productDataPath>
                     <jvmArgs>-Xms512m -Xmx1024m -server
                         -Datlassian.bamboo.build.disable=true -Datlassian.bamboo.branch.detection.disable=true
                         -Datlassian.bamboo.closed.branch.detection.disable=true
                     </jvmArgs>
+                    <instructions>
+                        <outputDirectory>${project.build.outputDirectory}/META-INF/lib</outputDirectory>
+                        <Bundle-SymbolicName>${atlassian.plugin.key}</Bundle-SymbolicName>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <Spring-Context>*</Spring-Context>
+                        <Export-Package>
+                        </Export-Package>
+                        <Import-Packages>
+                            !com.opensymphony.*,
+                            !org.objectweb.asm.*,
+                            *;resolution:="optional",
+                        </Import-Packages>
+                        <skipManifestValidation>true</skipManifestValidation>
+                    </instructions>
                     <systemPropertyVariables>the active branch
                         <GIT_BRANCH>${git.branch}</GIT_BRANCH>
                     </systemPropertyVariables>
-                    <extractDependencies>false</extractDependencies>
                     <products>
                         <product>
                             <id>bamboo</id>
@@ -551,20 +657,12 @@
                         </testGroup>
                     </testGroups>
 
-                    <pluginArtifacts>
-                        <pluginArtifact>
-                            <groupId>com.zuhlke.testing</groupId>
-                            <artifactId>atlassian-plugin-test-console-enabler</artifactId>
-                            <version>1.0.1</version>
-                        </pluginArtifact>
-                    </pluginArtifacts>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>com.atlassian.plugin</groupId>
                 <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
-                <version>1.2.13</version>
+                <version>${atlassian.spring.scanner.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -609,107 +707,6 @@
                             <goal>revision</goal>
                         </goals>
                         <phase>initialize</phase>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.3</version>
-                <executions>
-                    <execution>
-                        <id>unpack-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <excludes>META-INF/**/*</excludes>
-                            <excludeClassifiers>uber</excludeClassifiers>
-                            <includeArtifactIds>
-                                build-info-api,build-info-client,build-info-extractor,build-info-extractor-maven3,build-info-vcs,p4java-jfrog,org.eclipse.jgit
-                            </includeArtifactIds>
-                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                            <overWriteReleases>true</overWriteReleases>
-                            <overWriteSnapshots>true</overWriteSnapshots>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-dependencies</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-maven3</artifactId>
-                                    <version>${buildinfo.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-maven3-${buildinfo.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-gradle</artifactId>
-                                    <version>${buildinfo.gradle.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-gradle-${buildinfo.gradle.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-nuget</artifactId>
-                                    <version>${buildinfo.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-nuget-${buildinfo.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-npm</artifactId>
-                                    <version>${buildinfo.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-npm-${buildinfo.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-docker</artifactId>
-                                    <version>${buildinfo.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-docker-${buildinfo.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>org.jfrog.buildinfo</groupId>
-                                    <artifactId>build-info-extractor-ivy</artifactId>
-                                    <version>${buildinfo.version}</version>
-                                    <type>jar</type>
-                                    <classifier>uber</classifier>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/META-INF/lib</outputDirectory>
-                                    <destFileName>build-info-extractor-ivy-${buildinfo.version}-uber.jar
-                                    </destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -1,6 +1,6 @@
 package org.jfrog.bamboo.context;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.jfrog.bamboo.configuration.AbstractArtifactoryConfiguration;
@@ -34,7 +34,7 @@ public class GenericContext extends ArtifactoryBuildContext {
     public static final String ENV_VARS_EXCLUDE_PATTERNS = "artifactory.generic.envVarsExcludePatterns";
     public static final String SIGN_METHOD_MAP_KEY = "signMethods";
 
-    public static final Map<String, String> SIGN_METHOD_MAP = ImmutableMap.of(
+    public static final Map<String, String> SIGN_METHOD_MAP = Map.of(
             "false", "Don't Sign", "true", "Sign");
 
     public GenericContext(Map<String, String> env) {

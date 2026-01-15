@@ -3,7 +3,7 @@ package org.jfrog.bamboo.configuration;
 import com.atlassian.bamboo.collections.ActionParametersMap;
 import com.atlassian.bamboo.task.TaskDefinition;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +25,7 @@ public class ArtifactoryCollectBuildIssuesConfiguration extends AbstractArtifact
     private static final String KEY = "artifactoryCollectBuildIssuesBuilder";
     private static final Set<String> FIELDS_TO_COPY = CollectBuildIssuesContext.getFieldsToCopy();
     private static final String CFG_CONFIG_SOURCE_FILE = "file";
-    private static final Map<String, String> CFG_CONFIG_SOURCE_OPTIONS = ImmutableMap.of(CFG_CONFIG_SOURCE_TASK_CONFIGURATION, "Task Configuration", CFG_CONFIG_SOURCE_FILE, "File");
+    private static final Map<String, String> CFG_CONFIG_SOURCE_OPTIONS = Map.of(CFG_CONFIG_SOURCE_TASK_CONFIGURATION, "Task Configuration", CFG_CONFIG_SOURCE_FILE, "File");
 
 
     @Override

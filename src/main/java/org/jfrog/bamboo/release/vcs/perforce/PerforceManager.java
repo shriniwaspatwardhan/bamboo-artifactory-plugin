@@ -1,7 +1,7 @@
 package org.jfrog.bamboo.release.vcs.perforce;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
-import com.atlassian.bamboo.repository.perforce.PerforceRepository;
+//import com.atlassian.bamboo.repository.perforce.PerforceRepository;
 import com.atlassian.bamboo.v2.build.BuildContext;
 import org.apache.commons.lang.StringUtils;
 import org.jfrog.bamboo.context.PackageManagersContext;

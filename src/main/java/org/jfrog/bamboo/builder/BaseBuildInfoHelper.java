@@ -42,6 +42,7 @@ import org.jfrog.build.api.util.Log;
 import org.jfrog.build.extractor.ci.BuildInfoProperties;
 import org.jfrog.build.extractor.clientConfiguration.ClientProperties;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -59,21 +60,23 @@ public abstract class BaseBuildInfoHelper {
 
     protected Log buildInfoLog;
     protected BuildContext context;
+
     protected ServerConfigManager serverConfigManager;
+
     protected AdministrationConfiguration administrationConfiguration;
     protected AdministrationConfigurationAccessor administrationConfigurationAccessor;
     private HttpClient httpClient;
     protected String bambooBaseUrl;
     protected BuildParamsOverrideManager buildParamsOverrideManager;
 
-    public void init(BuildParamsOverrideManager buildParamsOverrideManager, BuildContext context, BuildLogger logger) {
+    public void init(BuildParamsOverrideManager buildParamsOverrideManager, BuildContext context, BuildLogger logger,ServerConfigManager serverConfigManager) {
         this.buildParamsOverrideManager = buildParamsOverrideManager;
         this.context = context;
         buildInfoLog = new BuildInfoLog(log, logger);
-        serverConfigManager = ServerConfigManager.getInstance();
         ContainerManager.autowireComponent(this);
         httpClient = new HttpClient();
         bambooBaseUrl = determineBambooBaseUrl();
+        this.serverConfigManager = serverConfigManager;
     }
 
     public void setAdministrationConfiguration(AdministrationConfiguration administrationConfiguration) {

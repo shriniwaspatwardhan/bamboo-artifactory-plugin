@@ -1,59 +1,47 @@
-/*
- * Copyright (C) 2010 JFrog Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.jfrog.bamboo.admin;
 
 import com.atlassian.bamboo.bandana.BambooBandanaContext;
 import com.atlassian.bamboo.bandana.PlanAwareBandanaContext;
 import com.atlassian.bamboo.variable.CustomVariableContext;
 import com.atlassian.bandana.BandanaManager;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.spring.container.ContainerManager;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.jetbrains.annotations.Nullable;
 import org.jfrog.bamboo.security.EncryptionHelper;
 import org.jfrog.bamboo.util.BuildInfoLog;
 import org.jfrog.bamboo.util.TaskUtils;
+import org.jfrog.bamboo.util.Utils;
 import org.jfrog.build.extractor.clientConfiguration.ArtifactoryManagerBuilder;
 import org.jfrog.build.extractor.clientConfiguration.client.artifactory.ArtifactoryManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Global Artifactory server configuration manager
- *
- * @author Noam Y. Tenne
- */
+@Component("artifactoryServerConfigManager")
 public class ServerConfigManager implements Serializable {
 
     private transient Logger log = LogManager.getLogger(ServerConfigManager.class);
@@ -64,6 +52,15 @@ public class ServerConfigManager implements Serializable {
     private AtomicLong nextAvailableId = new AtomicLong(0);
     private CustomVariableContext customVariableContext;
 
+    @Inject
+    public ServerConfigManager(@ComponentImport BandanaManager bandanaManager,@ComponentImport CustomVariableContext customVariableContext) {
+       // ContainerManager.autowireComponent(this);
+        this.setBandanaManager(bandanaManager);
+        this.customVariableContext = customVariableContext;
+
+        log.info("finished initializing ServerConfigManager");
+
+    }
 
     public List<ServerConfig> getAllServerConfigs() {
         return Lists.newArrayList(configuredServers);
@@ -77,12 +74,6 @@ public class ServerConfigManager implements Serializable {
         }
 
         return null;
-    }
-
-    public static ServerConfigManager getInstance() {
-        ServerConfigManager serverConfigManager = new ServerConfigManager();
-        ContainerManager.autowireComponent(serverConfigManager);
-        return serverConfigManager;
     }
 
     public void addServerConfiguration(ServerConfig serverConfig) {
@@ -126,20 +117,20 @@ public class ServerConfigManager implements Serializable {
         }
     }
 
-    @Autowired
     public void setBandanaManager(BandanaManager bandanaManager) {
         this.bandanaManager = bandanaManager;
         try {
             setArtifactoryServers(bandanaManager);
-        } catch (InstantiationException | IllegalAccessException | IOException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | IOException e ) {
             log.error("Could not load Artifactory configuration.", e);
         }
     }
 
     private void setArtifactoryServers(BandanaManager bandanaManager)
-            throws IOException, InstantiationException, IllegalAccessException {
+            throws IOException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
         String existingArtifactoryConfig = (String) bandanaManager.getValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, ARTIFACTORY_CONFIG_KEY);
+        log.info(String.format("existing server list action %s",existingArtifactoryConfig));
         if (StringUtils.isNotBlank(existingArtifactoryConfig)) {
             List<ServerConfig> serverConfigList = getServersFromXml(existingArtifactoryConfig);
             for (Object serverConfig : serverConfigList) {
@@ -277,19 +268,12 @@ public class ServerConfigManager implements Serializable {
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT, ARTIFACTORY_CONFIG_KEY, serverConfigsString);
     }
 
-    @Autowired
     public void setCustomVariableContext(CustomVariableContext customVariableContext) {
         this.customVariableContext = customVariableContext;
     }
 
-    public class BandanaContext extends PlanAwareBandanaContext{
 
-        public BandanaContext(@Nullable BambooBandanaContext parentContext, long planId, long chanId, @Nullable String pluginKey) {
-            super(parentContext, planId, chanId, pluginKey);
-        }
-    }
-
-    private List<ServerConfig> getServersFromXml(String stringXml) throws IllegalAccessException, InstantiationException {
+    private List<ServerConfig> getServersFromXml(String stringXml) throws IllegalAccessException, InstantiationException, NoSuchMethodException,InvocationTargetException {
         List<ServerConfig> serverConfigs = Lists.newArrayList();
         List<String> stringServerConfigs = findAllObjects(ServerConfig.class, stringXml);
         for (String stringServerConfig : stringServerConfigs) {
@@ -298,8 +282,8 @@ public class ServerConfigManager implements Serializable {
         return serverConfigs;
     }
 
-    private <T> T getObjectFromStringXml(String stringT, Class<T> tClass) throws IllegalAccessException, InstantiationException {
-        T object = tClass.newInstance();
+    private <T> T getObjectFromStringXml(String stringT, Class<T> tClass) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        T object = tClass.getDeclaredConstructor().newInstance();
         boolean accsessable;
         String value;
         for (Field field : tClass.getDeclaredFields()) {

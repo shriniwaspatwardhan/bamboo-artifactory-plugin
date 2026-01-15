@@ -19,18 +19,24 @@ package org.jfrog.bamboo.admin;
 import com.atlassian.bamboo.security.GlobalApplicationSecureObject;
 import com.atlassian.bamboo.ww2.actions.admin.user.AbstractEntityPagerSupport;
 import com.atlassian.bamboo.ww2.aware.permissions.GlobalAdminSecurityAware;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-
+import javax.inject.Inject;
 /**
  * Existing global Artifactory server configuration list action
  *
  * @author Noam Y. Tenne
  */
+
 public class ExistingArtifactoryServerAction extends AbstractEntityPagerSupport implements GlobalAdminSecurityAware {
 
-	private ServerConfigManager serverConfigManager;
 
+	private transient Logger log = LogManager.getLogger(ExistingArtifactoryServerAction.class);
+	private final ServerConfigManager serverConfigManager;
+
+	@Inject
 	public ExistingArtifactoryServerAction(ServerConfigManager serverConfigManager) {
 		this.serverConfigManager = serverConfigManager;
 	}

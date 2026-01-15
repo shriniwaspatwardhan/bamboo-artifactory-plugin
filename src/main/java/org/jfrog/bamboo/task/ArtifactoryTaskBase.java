@@ -1,9 +1,11 @@
 package org.jfrog.bamboo.task;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
+import com.atlassian.bamboo.credentials.CredentialsAccessor;
 import com.atlassian.bamboo.task.CommonTaskContext;
 import com.atlassian.bamboo.task.TaskException;
 import com.atlassian.plugin.PluginAccessor;
+import com.atlassian.spring.container.ContainerManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -31,11 +33,13 @@ public abstract class ArtifactoryTaskBase {
     protected Log buildInfoLog;
 
     protected void initTask(@NotNull CommonTaskContext context) throws TaskException {
+        pluginAccessor = (PluginAccessor) ContainerManager.getComponent("pluginAccessor");
         this.taskContext = context;
         this.logger = taskContext.getBuildLogger();
         this.buildInfoLog = new BuildInfoLog(log, logger);
         this.containerized = taskContext.getCommonContext().getDockerPipelineConfiguration().isEnabled();
         this.fileSeparator = containerized ? "/" : File.separator;
+
     }
 
     protected abstract ServerConfig getUsageServerConfig();
